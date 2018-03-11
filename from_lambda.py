@@ -23,16 +23,16 @@ def to_str(ex):
         if ex.args:
             return 'lambda {}: {}'.format(', '.join(ex.args), to_str(ex.expr))
         return 'lambda: {}'.format(to_str(ex.expr))
-    elif type(ex) is Val:
+    if type(ex) is Val:
         return str(ex.v)
-    elif type(ex) in (Arg, Global):
+    if type(ex) in (Arg, Global):
         return str(ex.n)
-    elif type(ex) is Attr:
+    if type(ex) is Attr:
         p = _get_prec(ex)
         if p > _get_prec(ex.x):
             return '({}).{}'.format(to_str(ex.x), ex.n)
         return '{}.{}'.format(to_str(ex.x), ex.n)
-    elif type(ex) is BinOp:
+    if type(ex) is BinOp:
         p = _get_prec(ex)
         if ex.op == '[]':
             if p > _get_prec(ex.x):
@@ -42,38 +42,37 @@ def to_str(ex):
         fy = '{}' if p|1 <= _get_prec(ex.y) else '({})'
         f = fx + ' {} ' + fy
         return f.format(to_str(ex.x), ex.op, to_str(ex.y))
-    elif type(ex) is UnOp:
+    if type(ex) is UnOp:
         t = ex.op
         if t[-1].isalpha():
             t = t + ' '
         if _get_prec(ex) > _get_prec(ex.x):
             return '{}({})'.format(t, to_str(ex.x))
         return '{}{}'.format(t, to_str(ex.x))
-    elif type(ex) is Call:
+    if type(ex) is Call:
         if _get_prec(ex) > _get_prec(ex.f):
             return '({})({})'.format(to_str(ex.f), ', '.join(map(to_str, ex.args)))
         return '{}({})'.format(to_str(ex.f), ', '.join(map(to_str, ex.args)))
-    elif type(ex) is IfElse:
+    if type(ex) is IfElse:
         p = _get_prec(ex)
         fc = '{}' if p < _get_prec(ex.c) else '({})'
         ft = '{}' if p < _get_prec(ex.t) else '({})'
         ff = '{}' if p <= _get_prec(ex.f) else '({})'
         f = '{} if {} else {}'.format(ft, fc, ff)
         return f.format(to_str(ex.t), to_str(ex.c), to_str(ex.f))
-    elif type(ex) is List:
+    if type(ex) is List:
         return '[{}]'.format(', '.join(map(to_str, ex.vs)))
-    elif type(ex) is Tuple:
+    if type(ex) is Tuple:
         if len(ex.vs) == 1:
             return '({},)'.format(to_str(ex.vs[0]))
         return '({})'.format(', '.join(map(to_str, ex.vs)))
-    elif type(ex) is Set:
+    if type(ex) is Set:
         if len(ex.vs) == 0:
             return 'set()'
         return '{{{}}}'.format(', '.join(map(to_str, ex.vs)))
-    elif type(ex) is Map:
+    if type(ex) is Map:
         return '{{{}}}'.format(', '.join(map(lambda p: '{}: {}'.format(to_str(p[0]), to_str(p[1])), ex.vs)))
-    else:
-        return '‹{}›'.format(str(ex))
+    raise TypeError(type(ex))
 
 _bin_prec = {
     'or': 5,
@@ -260,7 +259,7 @@ def _parse_expr(ops, i, stack):
             stack.append(Set(vs))
             continue
         if opname == 'BUILD_MAP':
-            vs = _popn(stack, op.argval)
+            vs = _popn(stack, 2*op.argval)
             vs = tuple(zip(vs[0::2], vs[1::2]))
             stack.append(Map(vs))
             continue
@@ -310,49 +309,4 @@ def _popn(l, n):
     r = l[-n:]
     del l[-n:]
     return r
-
-def parse_to_str(l):
-    return to_str(parse_lambda(l))
-
-if __name__ == '__main__':
-    #print(parse_to_str(lambda: 42))
-    #print(parse_to_str(lambda x: x))
-    #print(parse_to_str(lambda x: -x))
-    #print(parse_to_str(lambda x, y: x < y))
-    #print(parse_to_str(lambda x, y: x*10 + y))
-    #print(parse_to_str(lambda x, y: x and y))
-    #print(parse_to_str(lambda x, y: x or y))
-    #print(parse_to_str(lambda x: x < a))
-    #print(parse_to_str(lambda x: x is not a))
-    #print(parse_to_str(lambda: x < 1 or y < 2 or z < 3))
-    #print(parse_to_str(lambda: (x < 1 or y < 2) or z < 3))
-    #print(parse_to_str(lambda: x < 1 and y < 2 or z < 3))
-    #print(parse_to_str(lambda: a + b + c))
-    #print(parse_to_str(lambda: a + (b + c)))
-    #print(parse_to_str(lambda: a ** b ** c))
-    #print(parse_to_str(lambda: (a ** b) ** c))
-    #print(parse_to_str(lambda: (a or b) + 1))
-    #print(parse_to_str(lambda: a if c else b))
-    #print(parse_to_str(lambda: (a if c else b) + 1))
-    #print(parse_to_str(lambda: a if not c else b))
-    #print(parse_to_str(lambda: b and c or d))
-    #print(parse_to_str(lambda: a or b and c or d))
-    #print(parse_to_str(lambda: a and b or c and d))
-    #print(parse_to_str(lambda: (a or b) and c))
-    #print(parse_to_str(lambda a: a[1]))
-    #print(parse_to_str(lambda a, b: (a or b)[1]))
-    #print(parse_to_str(lambda a: a[1][2]))
-    #print(parse_to_str(lambda a: a.x))
-    #print(parse_to_str(lambda a: a.x.y))
-    #print(parse_to_str(lambda a: a.x[1].y))
-    print(parse_to_str(lambda: [a, b, c]))
-    print(parse_to_str(lambda: []))
-    print(parse_to_str(lambda: (a, b, c)))
-    print(parse_to_str(lambda: (a,)))
-    print(parse_to_str(lambda: {a, b, c}))
-    #print(parse_to_str(lambda: set()))
-    print(parse_to_str(lambda: {a: 10, b: 20}))
-    print(parse_to_str(lambda: {}))
-    print(parse_to_str(lambda: f(1, 2)))
-    #print(parse_to_str(lambda: (lambda x: x + 1)(2)))
 
