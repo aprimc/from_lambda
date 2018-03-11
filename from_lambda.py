@@ -179,7 +179,8 @@ def _parse_expr(ops, i, stack):
         if opname == 'LOAD_FAST':
             stack.append(Arg(op.argval))
             continue
-        if opname == 'LOAD_GLOBAL':
+        #if opname == 'LOAD_GLOBAL':
+        if opname in ('LOAD_GLOBAL', 'LOAD_CLOSURE', 'LOAD_DEREF'):
             stack.append(Global(op.argval))
             continue
         if opname == 'LOAD_ATTR':
@@ -279,7 +280,17 @@ def _parse_expr(ops, i, stack):
         #    stack.append(CallKw(f, args, kw.v))
         #    continue
         # TODO CALL_FUNCTION_EX, BUILD_TUPLE_UNPACK_WITH_CALL
-        # TODO MAKE_FUNCTION
+        if opname == 'MAKE_FUNCTION':
+            assert op.argval in (0, 8)
+            stack.pop()  # discard name
+            co = stack.pop()
+            if op.argval & 8:
+                stack.pop()  # discard closed over variables
+            args = co.v.co_varnames
+            expr = _parse_expr(list(dis.get_instructions(co.v)), 0, [])
+            stack.append(Lambda(args, expr))
+            continue
+        # TODO maybe do comprehension
         if opname == 'NOP':
             continue
         if opname == 'POP_TOP':

@@ -67,3 +67,7 @@ class TestFromLambda(unittest.TestCase):
         self.assertEqual('lambda: (a < b and b < c) and d < e', self.parse_to_str(lambda: a < b < c and d < e))
         self.assertEqual('lambda: a < b and b < c and d < e', self.parse_to_str(lambda: a < b and b < c and d < e))
         self.assertEqual('lambda: a < b and b < c and d < e', self.parse_to_str(lambda: (a < b and b < c) and d < e))
+
+    def test_lambda_in_lambda(self):
+        self.assertEqual('lambda: lambda x: x', self.parse_to_str(lambda: lambda x: x))
+        self.assertEqual('lambda x: lambda: x', self.parse_to_str(lambda x: lambda: x))
