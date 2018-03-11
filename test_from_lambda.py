@@ -58,3 +58,12 @@ class TestFromLambda(unittest.TestCase):
     def test_simple_call(self):
         self.assertEqual('lambda x: f(x)', self.parse_to_str(lambda x: f(x)))
         self.assertEqual('lambda x: f(x + 1) * 2', self.parse_to_str(lambda x: f(x + 1) * 2))
+        self.assertEqual('lambda x: f(x).g(x)', self.parse_to_str(lambda x: f(x).g(x)))
+
+    def test_comparison(self):
+        self.assertEqual('lambda: a < b', self.parse_to_str(lambda: a < b))
+        self.assertEqual('lambda: a < b and b < c', self.parse_to_str(lambda: a < b and b < c))
+        self.assertEqual('lambda: a < b and b < c', self.parse_to_str(lambda: a < b < c))
+        self.assertEqual('lambda: (a < b and b < c) and d < e', self.parse_to_str(lambda: a < b < c and d < e))
+        self.assertEqual('lambda: a < b and b < c and d < e', self.parse_to_str(lambda: a < b and b < c and d < e))
+        self.assertEqual('lambda: a < b and b < c and d < e', self.parse_to_str(lambda: (a < b and b < c) and d < e))

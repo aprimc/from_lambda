@@ -103,7 +103,7 @@ def _get_prec(ex):
         return 0
     if type(ex) is IfElse:
         return 2
-    if type(ex) is Attr:
+    if type(ex) in (Attr, Call):
         return 30
     if type(ex) in (List, Tuple, Map, Set):
         return 32
@@ -246,6 +246,9 @@ def _parse_expr(ops, i, stack):
                 f = _parse_expr(ops[:k], jj, stack[:])
                 stack.append(_normalize(IfElse(UnOp('not', c), t, f)))
                 return _parse_expr(ops[k:], 0, stack)
+        if opname == 'JUMP_FORWARD':
+            jj = _find_offset(ops, op.argval)
+            return _parse_expr(ops, jj, stack)
         if opname == 'BUILD_LIST':
             vs = tuple(_popn(stack, op.argval))
             stack.append(List(vs))
